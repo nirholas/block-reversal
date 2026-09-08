@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BlockReversal: Charges the swap that unwinds a block's own price move, which is the only leg of a sandwich that can be identified without knowing who anybody is</title>
+<meta name="description" content="Charges the swap that unwinds a block's own price move, which is the only leg of a sandwich that can be identified without knowing who anybody is.">
+<link rel="canonical" href="https://block-reversal.pages.dev/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#07080b">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BlockReversal">
+<meta property="og:title" content="BlockReversal">
+<meta property="og:description" content="Charges the swap that unwinds a block's own price move, which is the only leg of a sandwich that can be identified without knowing who anybody is.">
+<meta property="og:url" content="https://block-reversal.pages.dev/">
+<meta property="og:image" content="https://block-reversal.pages.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BlockReversal">
+<meta name="twitter:description" content="Charges the swap that unwinds a block's own price move, which is the only leg of a sandwich that can be identified without knowing who anybody is.">
+<meta name="twitter:image" content="https://block-reversal.pages.dev/og.png">
+
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="alternate" type="text/plain" title="For language models" href="/llms.txt">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareSourceCode","name":"BlockReversal","description":"Charges the swap that unwinds a block's own price move, which is the only leg of a sandwich that can be identified without knowing who anybody is.","url":"https://block-reversal.pages.dev","codeRepository":"https://github.com/nirholas/block-reversal","programmingLanguage":"Solidity","runtimePlatform":"Ethereum Virtual Machine","license":"https://www.apache.org/licenses/LICENSE-2.0","keywords":"mev, anti-sandwich, dynamic-fee, oracle-free, no-admin","isPartOf":{"@type":"WebSite","name":"HookForge","url":"https://hookforge.pages.dev"}}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="shell masthead__inner">
+    <a class="brand" href="/">BlockReversal</a>
+    <nav aria-label="Primary">
+      <a href="#how">How it works</a>
+      <a href="#using">Using it</a>
+      <a href="#deploy">Deploy</a>
+      <a href="https://github.com/nirholas/block-reversal" rel="noopener">GitHub</a>
+      <a href="https://hookforge.pages.dev" rel="noopener">Catalogue</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="stage">
+    <div class="scene">
+      <canvas data-permissions="{&quot;afterRemoveLiquidityReturnsDelta&quot;:false,&quot;afterAddLiquidityReturnsDelta&quot;:false,&quot;afterSwapReturnsDelta&quot;:false,&quot;beforeSwapReturnsDelta&quot;:false,&quot;afterDonate&quot;:false,&quot;beforeDonate&quot;:false,&quot;afterSwap&quot;:false,&quot;beforeSwap&quot;:true,&quot;afterRemoveLiquidity&quot;:false,&quot;beforeRemoveLiquidity&quot;:false,&quot;afterAddLiquidity&quot;:false,&quot;beforeAddLiquidity&quot;:false,&quot;afterInitialize&quot;:true,&quot;beforeInitialize&quot;:false}" aria-hidden="true"></canvas>
+      <p class="scene__fallback">BlockReversal implements 2 of the fourteen Uniswap v4 callbacks: afterInitialize, beforeSwap.</p>
+    </div>
+    <p class="scene__hint">drag to orbit</p>
+
+  <section class="shell hero">
+    <p class="eyebrow">Uniswap v4 hook &middot; Order flow and MEV</p>
+    <h1>BlockReversal</h1>
+    <p class="lede">Charges the swap that unwinds a block's own price move, which is the only leg of a sandwich that can be identified without knowing who anybody is.</p>
+    <div class="cta-row">
+      <a class="btn btn--primary" href="https://github.com/nirholas/block-reversal" rel="noopener">Source on GitHub</a>
+      <a class="btn" href="#using">Use it in a pool</a>
+      <a class="btn" href="/hook.json">Manifest JSON</a>
+    </div>
+
+    <dl class="stats">
+      <div class="stat"><dt>Family</dt><dd>Order flow and MEV</dd></div>
+      <div class="stat"><dt>Callbacks</dt><dd>2 of 14</dd></div>
+      <div class="stat"><dt>Fee</dt><dd>dynamic</dd></div>
+      <div class="stat"><dt>Admin keys</dt><dd>none</dd></div>
+      <div class="stat"><dt>Licence</dt><dd>Apache-2.0</dd></div>
+    </dl>
+  </section>
+  </div>
+
+  <section class="shell">
+    <h2 id="how">How it works</h2>
+      <p>Anti-sandwich designs almost all try to identify the attacker: track an address, require a bond, tax a trader who reverses direction. Every one of them is defeated by a second EOA, which costs a bot nothing. Identity is the wrong thing to look at, because a sandwich is not a property of who is trading.</p>
+      <p>It is a property of the price path. A sandwich has a shape: within one block, the price moves away from where the block opened and then comes back. The profitable leg is always the one that comes back, because that is where the position is closed.</p>
+      <p>This hook never asks who is trading. It records where the price stood when the block opened, watches how far it has travelled since, and prices any swap that moves it back toward the opening more expensively the more of that move it is unwinding. The victim is not charged: their swap is the one that moves the price away.</p>
+      <p>Nor is the attacker's opening leg. Only the close pays, which is the leg that has something to pay with. The same charge lands on an honest trader who happens to trade against the block's direction, and that is not a flaw to apologise for.</p>
+      <p>Such a trader is buying at a price that an earlier trade in the same block improved for them, at the expense of the liquidity providers who supplied it. Returning part of that improvement to those providers is the correct answer whether the trader meant to sandwich anybody or not. The fee is an LP fee, so that is exactly where it goes.</p>
+      <p>Nothing here needs an oracle, an auction, a keeper, a bond, a private mempool, or a way to tell one address from another. It reads the pool's own tick against where the block opened, and that is all.</p>
+
+    <div class="callout callout--prior"><h3>Prior art</h3><p>Sandwich-resistant AMM designs reorder or batch within a block. Encrypted mempools (Shutter, SUAVE) hide the order. Auction-based capture (am-AMM, MEV-Share, Diamond) sells or reclaims the backrun.</p>
+      <p>Volatility-indexed dynamic fees raise the fee for everybody when the pool is moving. Pricing an individual swap by how much of the current block's own price move it is unwinding, so the closing leg pays and the victim does not, with no identity and no auction, is the contribution here.</p></div>
+    <div class="callout callout--warn"><h3>Where it does not help</h3><p>An honest trader who trades against the block's direction pays the surcharge too. That is deliberate and it is the real cost: the mechanism cannot distinguish a sandwich close from an ordinary trade in the same direction, because at the level it observes them they are the same event. It also does nothing about a sandwich split across two blocks, which is a different and much riskier attack for the attacker to run.</p>
+      <p>And a pool with a large `thresholdTicks` is protected only against sandwiches big enough to cross it, while a small one charges ordinary two-way flow more often; that trade is the pool's to make.</p></div>
+
+    <h2 id="using">Using it</h2>
+    <p>
+      Uniswap v4 removed <code>hookData</code> from <code>initialize</code>, so per-pool parameters arrive out of band.
+      Fix them for a pool key whose pool does not exist yet, then initialize. Nobody can change them afterwards,
+      including you.
+    </p>
+    <pre><code>hook.configure(
+    key,
+    BlockReversalHook.Config({
+        baseFee: /* uint24 */ 0,
+        maxSurcharge: /* uint24 */ 0,
+        thresholdTicks: /* int24 */ 0,
+        halfPointTicks: /* int24 */ 0
+    })
+);
+
+poolManager.initialize(key, startingSqrtPriceX96);</code></pre>
+    <p>The pool's <code>fee</code> field must be <code>LPFeeLibrary.DYNAMIC_FEE_FLAG</code>. The hook rejects a pool initialized without it, which is the most common integration failure.</p>
+
+    <h3>Parameters</h3>
+    <table>
+        <thead><tr><th>Parameter</th><th>Type</th><th>Units</th></tr></thead>
+        <tbody><tr><td><code>baseFee</code></td><td><code>uint24</code></td><td>hundredths of a bip (<code>3000</code> = 0.30%)</td></tr>
+          <tr><td><code>maxSurcharge</code></td><td><code>uint24</code></td><td>hundredths of a bip (<code>3000</code> = 0.30%)</td></tr>
+          <tr><td><code>thresholdTicks</code></td><td><code>int24</code></td><td>ticks</td></tr>
+          <tr><td><code>halfPointTicks</code></td><td><code>int24</code></td><td>ticks</td></tr></tbody>
+      </table>
+
+    <h3>From TypeScript</h3>
+    <pre><code>npm i @hookforge/sdk
+
+import {getHook, hookAddress, poolKeyFor} from "@hookforge/sdk";
+
+const hook = getHook("block-reversal");
+const key  = poolKeyFor({
+  hook: hookAddress("block-reversal", 8453),   // Base
+  currencyA: USDC, currencyB: WETH,
+  tickSpacing: 60, dynamicFee: true,
+});</code></pre>
+
+    <h2>What it reverts with</h2>
+    <table>
+        <thead><tr><th>Error</th><th>Meaning</th></tr></thead>
+        <tbody><tr><td><code>FeeTooLarge()</code></td><td>A surcharge cannot push the total past the protocol's own ceiling on an LP fee.</td></tr>
+          <tr><td><code>InvalidThreshold()</code></td><td>A threshold or half point of zero would make the surcharge fire on any move at all.</td></tr>
+          <tr><td><code>NotDynamicFee()</code></td><td>The hook was attempted to be initialized with a non-dynamic fee.</td></tr>
+          <tr><td><code>PoolAlreadyInitialized()</code></td><td>The pool already exists, so its configuration is final.</td></tr>
+          <tr><td><code>PoolNotConfigured()</code></td><td>The pool was initialized without a configuration for this hook.</td></tr>
+          <tr><td><code>SafeCastOverflowedIntToUint(int256)</code></td><td>An int value doesn't fit in a uint of <code>bits</code> size.</td></tr>
+          <tr><td><code>SafeCastOverflowedUintDowncast(uint8,uint256)</code></td><td>Value doesn't fit in a uint of <code>bits</code> size.</td></tr></tbody>
+      </table>
+
+    <h2>The callbacks it claims</h2>
+    <p>
+      Uniswap v4 reads a hook's permissions from the low fourteen bits of its own address, which is why deploying one
+      means mining a CREATE2 salt. This hook claims 2, so every deployment of it has an address ending
+      in <code>0x1080</code>.
+    </p>
+    <ul class="flags"><li class="flag">beforeInitialize</li><li class="flag flag--on">afterInitialize</li><li class="flag">beforeAddLiquidity</li><li class="flag">afterAddLiquidity</li><li class="flag">beforeRemoveLiquidity</li><li class="flag">afterRemoveLiquidity</li><li class="flag flag--on">beforeSwap</li><li class="flag">afterSwap</li><li class="flag">beforeDonate</li><li class="flag">afterDonate</li><li class="flag">beforeSwapReturnsDelta</li><li class="flag">afterSwapReturnsDelta</li><li class="flag">afterAddLiquidityReturnsDelta</li><li class="flag">afterRemoveLiquidityReturnsDelta</li></ul>
+
+    <h2>It says what it is, on-chain</h2>
+    <p>
+      Nothing about a hook's address tells an indexer, a wallet, a router or an agent what the pool does, which is why
+      hook discovery today is a curated list. This hook answers for itself, in one <code>eth_call</code>, with no
+      registry in the loop.
+    </p>
+    <pre><code>cast call $HOOK "hookName()(string)"    # BlockReversal
+cast call $HOOK "specURI()(string)"     # https://block-reversal.pages.dev/hook.json
+cast call $HOOK "hookTags()(string[])"  # mev, anti-sandwich, dynamic-fee, oracle-free, no-admin</code></pre>
+
+    <h2 id="deploy">Build, test and deploy</h2>
+    <pre><code>git clone --recurse-submodules https://github.com/nirholas/block-reversal
+cd block-reversal
+forge build &amp;&amp; forge test
+
+# Dry run: mines the salt, prints the address, sends nothing.
+forge script script/Deploy.s.sol --rpc-url $RPC_URL
+
+# For real.
+forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify</code></pre>
+
+    <div class="callout callout--warn">
+      <h3>Status</h3>
+      <p>
+        <strong>Unaudited.</strong> Built to an audited shape, on OpenZeppelin's audited hook bases, and tested against
+        a real <code>PoolManager</code>. No third party has reviewed it. Read "where it does not help" above before
+        putting money behind it. Not affiliated with Uniswap Labs.
+      </p>
+    </div>
+  </section>
+
+  <section class="shell">
+    <h2 id="try">Try it</h2>
+    <p>
+      This is the hook running, not a picture of it. Connect a wallet on a chain it is deployed to, or bring the whole
+      stack up locally in one command and use it with no funds and no wallet risk at all.
+    </p>
+    <div class="demo" data-demo="block-reversal">
+      <div class="panel panel--empty">
+        <p>Loading the demo… if this does not change, JavaScript is blocked and the demo cannot run.</p>
+      </div>
+    </div>
+    <details class="raw">
+      <summary>Run the whole thing locally</summary>
+      <pre><code>git clone --recurse-submodules https://github.com/nirholas/block-reversal
+cd block-reversal
+
+anvil &amp;
+forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
+node web/build.mjs &amp;&amp; npx serve web/dist</code></pre>
+      <p class="muted">
+        The deploy script writes <code>web/local.json</code> itself and the build merges it, so the page points at the
+        chain you just created without you editing anything. Point a wallet at
+        <code>http://127.0.0.1:8545</code> and every button on this page works.
+      </p>
+      <p class="muted">
+        Anvil's first account is pre-funded and its key is public by design. Never use it anywhere real.
+      </p>
+    </details>
+  </section>
+  <script type="application/json" id="deployments">{"chains":{},"errors":[{"type":"error","name":"FeeTooLarge","inputs":[]},{"type":"error","name":"HookNotImplemented","inputs":[]},{"type":"error","name":"InvalidPool","inputs":[]},{"type":"error","name":"InvalidThreshold","inputs":[]},{"type":"error","name":"NotDynamicFee","inputs":[]},{"type":"error","name":"NotPoolManager","inputs":[]},{"type":"error","name":"PoolAlreadyInitialized","inputs":[]},{"type":"error","name":"PoolNotConfigured","inputs":[]},{"type":"error","name":"SafeCastOverflowedIntToUint","inputs":[{"name":"value","type":"int256","internalType":"int256"}]},{"type":"error","name":"SafeCastOverflowedUintDowncast","inputs":[{"name":"bits","type":"uint8","internalType":"uint8"},{"name":"value","type":"uint256","internalType":"uint256"}]}],"demo":{"panel":"guard","title":"The leg that closes a sandwich is the one that pays","lede":"This pool never asks who is trading. It records where the price stood when the block opened and charges any swap that moves it back, in proportion to how much of the block's move it is unwinding. Push the price one way, then try to come back and watch the quote change.","calls":[{"name":"quoteFee","inputs":["poolKey","bool"],"args":["poolKey",true],"outputs":["uint24"],"reads":[{"label":"Fee to sell currency0","format":"pips"}]},{"name":"quoteFee","inputs":["poolKey","bool"],"args":["poolKey",false],"outputs":["uint24"],"reads":[{"label":"Fee to buy currency0","format":"pips"}]}],"tryLabel":"Sell currency0","tryOtherLabel":"Buy currency0","zeroForOneLabel":"sold currency0","oneForZeroLabel":"bought currency0","localDeploy":{"flags":"Hooks.AFTER_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG","config":"BlockReversalHook.Config({baseFee: 500, maxSurcharge: 9_500, thresholdTicks: 20, halfPointTicks: 60})","dynamicFee":true}}}</script>
+  <script type="module" src="/assets/demo.js"></script>
+</main>
+
+<footer class="foot">
+  <div class="shell">
+    <p>
+      <a href="https://github.com/nirholas/block-reversal" rel="noopener">Source</a> &middot;
+      <a href="/hook.json">Manifest</a> &middot;
+      <a href="/llms.txt">llms.txt</a> &middot;
+      <a href="https://hookforge.pages.dev" rel="noopener">The rest of the catalogue</a>
+    </p>
+    <p>Apache-2.0 licensed. Not affiliated with Uniswap Labs.</p>
+  </div>
+</footer>
+<script type="module" src="/assets/scene.js"></script>
+</body>
+</html>

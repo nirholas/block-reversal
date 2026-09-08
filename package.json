@@ -1,0 +1,30 @@
+{
+  "name": "block-reversal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Charges the swap that unwinds a block's own price move, which is the only leg of a sandwich that can be identified without knowing who anybody is.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nirholas/block-reversal.git"
+  },
+  "homepage": "https://block-reversal.pages.dev",
+  "keywords": [
+    "uniswap",
+    "uniswap-v4",
+    "uniswap-hooks",
+    "defi",
+    "amm",
+    "solidity",
+    "mev",
+    "anti-sandwich",
+    "dynamic-fee",
+    "oracle-free",
+    "no-admin"
+  ],
+  "scripts": {
+    "build": "node web/build.mjs",
+    "contracts:build": "forge build",
+    "contracts:test": "forge test"
+  }
+}
