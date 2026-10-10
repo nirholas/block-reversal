@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: "block-reversal"
+abstract: "Charges the swap that unwinds a block's own price move, which is the only leg of a sandwich that can be identified without knowing who anybody is."
+license: Apache-2.0
+repository-code: "https://github.com/nirholas/block-reversal"
+url: "https://three.ws"
+authors:
+  - name: three.ws
+    website: "https://three.ws"
